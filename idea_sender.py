@@ -38,14 +38,18 @@ channel.queue_declare(queue='hello')
 while True:
     try:
         data = trap.recv()
+        message = json.dumps(data.decode('utf-8').encode('utf-8'))
+        channel.basic_publish(exchange='',routing_key='hello',body=message)
+        print(" [x] Sent 'IDEA Alert'")
+
     except pytrap.FormatChanged as e:
         fmttype, inputspec = trap.getDataFmt(0)
         data = e.data
+    except Exception as e:
+        print(e)
     if len(data) <= 1:
         break
-    message = json.dumps(data.decode('utf-8').encode('utf-8'))
-    channel.basic_publish(exchange='',routing_key='hello',body=message)
-    print(" [x] Sent 'Hello World!'")
+
 
 # Free allocated TRAP IFCs
 connection.close()
