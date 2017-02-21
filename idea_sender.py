@@ -21,36 +21,31 @@ ssl_options = {
     "ssl_version":ssl.PROTOCOL_TLSv1_2
 }
 credentials = pika.PlainCredentials(os.environ['RABBITMQ_USERNAME'], os.environ['RABBITMQ_PASSWORD'])
-parameters = pika.ConnectionParameters(host='192.168.2.120',
-    port=5671,
-    virtual_host='/',
-    heartbeat_interval = 0,
-    credentials=credentials,
-    ssl = True,
-    ssl_options = ssl_options)
-
+parameters = pika.ConnectionParameters(host='192.168.2.120', port=5671, virtual_host='/', heartbeat_interval = 0, credentials=credentials, ssl = True, ssl_options = ssl_options)
 connection = pika.BlockingConnection(parameters)
-
 channel = connection.channel()
-channel.queue_declare(queue='hello')
-
+channel.exchange_declare(exchange='broadcast_idea', exchange_type='fanout')
 
 while True:
     try:
         data = trap.recv()
-        message = json.dumps(data.decode('utf-8').encode('utf-8'))
-        channel.basic_publish(exchange='',routing_key='hello',body=message)
+        print '----------------'
+        print data.decode('utf-8')
+        print '----------------'
+        message = json.dumps(data.decode('utf-8'))
+        channel.basic_publish(exchange='broadcast_idea',routing_key='',body=message)
         print(" [x] Sent 'IDEA Alert'")
 
     except pytrap.FormatChanged as e:
         fmttype, inputspec = trap.getDataFmt(0)
         data = e.data
-    except Exception as e:
-        print(e)
+    #except Exception as e:
+#        print(e)
     if len(data) <= 1:
         break
 
 
-# Free allocated TRAP IFCs
+# close RABBITMQ connection
 connection.close()
+# Free allocated TRAP IFCs
 trap.finalize()
